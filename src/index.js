@@ -330,10 +330,10 @@ export default class TronWeb extends EventEmitter {
             limit = 200;
         }
 
-        if(sort !== false && sort !== 'timeStamp' && sort !== '-timeStamp')
-            return callback('sort can be either timeStamp or -timeStamp');
+        if(sort !== false && typeof sort !== 'string')
+            return callback('sort should be string');
 
-        if(start !== false && (!utils.isInteger(start) || start < 1))
+        if(start !== false && (!utils.isInteger(start) || start < 0))
             return callback('Invalid start provided');
 
         const qs = {};
@@ -366,19 +366,19 @@ export default class TronWeb extends EventEmitter {
         .catch(err => callback((err.response && err.response.data) || err));
     }
 
-    getLatestSoldifiedBlock(callback = false) {
+    getLatestSoldifiedBlock(callback = false) {        
         if(!callback)
             return this.injectPromise(this.getLatestSoldifiedBlock);
 
         if(!this.eventServer)
             return callback('No event server configured');
 
-        return this.eventServer.request('/blocks/latestSolidifiedBlockNumber')
-        .then((blockNum) => {
+        return this.eventServer.request('blocks/latestSolidifiedBlockNumber')
+        .then((blockNum) => {            
             if(Number.isInteger(blockNum) === false)
                 throw new Error('Response is not an integer');
 
-            return blockNum;  
+            return callback(null, blockNum);  
         })
         .catch((err) => {
             return callback(err);
