@@ -13,11 +13,6 @@
         "test": "node test/helpers/newAccounts 5 && npm run-script test:browser && npm run-script test:node",
         "build:dev": "NODE_ENV=development npm run build"
     },
-    "husky": {
-        "hooks": {
-            "pre-push": "node ./scripts/pre-push.js"
-        }
-    },
     "dependencies": {
         "@babel/runtime": "^7.0.0",
         "axios": "^0.18.0",

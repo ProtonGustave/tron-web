@@ -214,7 +214,7 @@ export default class TronWeb extends EventEmitter {
             return this.injectPromise(this.getEventResult, contractAddress, options);
 
         if(!this.eventServer)
-            callback('No event server configured');
+            return callback('No event server configured');
 
         const routeParams = [];
 
@@ -283,7 +283,7 @@ export default class TronWeb extends EventEmitter {
             return this.injectPromise(this.getEventByTransactionID, transactionID);
 
         if(!this.eventServer)
-            callback('No event server configured');
+            return callback('No event server configured');
 
         return this.eventServer.request(`event/transaction/${transactionID}`).then((data = false) => {
             if(!data)
@@ -296,6 +296,93 @@ export default class TronWeb extends EventEmitter {
                 data.map(event => utils.mapEvent(event))
             );
         }).catch(err => callback((err.response && err.response.data) || err));
+    }
+
+    // works only with this event server
+    // https://github.com/tronprotocol/tron-eventquery
+    getEventsByTimestamp({
+        contractAddress = false, since = false, limit = false, sort = false, start = false
+    }, callback = false) {
+        if(!callback) {
+            return this.injectPromise(this.getEventsByTimestamp, {
+                contractAddress,
+                since,
+                limit,
+                sort,
+                start,
+            });
+        }
+
+        if(!this.eventServer)
+            return callback('No event server configured');
+
+        if(contractAddress !== false && !this.isAddress(contractAddress))
+            return callback('Invalid contract address provided');
+
+        if(since !== false && !utils.isInteger(since))
+            return callback('Invalid since provided');
+
+        if(limit !== false && !utils.isInteger(limit))
+            return callback('Invalid limit provided');
+
+        if(limit > 200) {
+            console.warn('Defaulting to maximum accepted limit: 200');
+            limit = 200;
+        }
+
+        if(sort !== false && sort !== 'timeStamp' && sort !== '-timeStamp')
+            return callback('sort can be either timeStamp or -timeStamp');
+
+        if(start !== false && (!utils.isInteger(start) || start < 1))
+            return callback('Invalid start provided');
+
+        const qs = {};
+
+        if(contractAddress !== false)
+            qs.contract = contractAddress;
+
+        if(since !== false)
+            qs.since = since;
+
+        if(limit !== false)
+            qs.limit = limit;
+
+        if(sort !== false)
+            qs.sort = sort;
+
+        if(start !== false)
+            qs.start = start;
+
+        return this.eventServer.request(`events/timestamp?${querystring.stringify(qs)}`)
+        .then((data = false) => {
+            if(!data)
+                return callback('Unknown error occurred');
+
+            if(!utils.isArray(data))
+                return callback(data);
+
+            return callback(null, data);
+        })
+        .catch(err => callback((err.response && err.response.data) || err));
+    }
+
+    getLatestSoldifiedBlock(callback = false) {
+        if(!callback)
+            return this.injectPromise(this.getLatestSoldifiedBlock);
+
+        if(!this.eventServer)
+            return callback('No event server configured');
+
+        return this.eventServer.request('/blocks/latestSolidifiedBlockNumber')
+        .then((blockNum) => {
+            if(Number.isInteger(blockNum) === false)
+                throw new Error('Response is not an integer');
+
+            return blockNum;  
+        })
+        .catch((err) => {
+            return callback(err);
+        });
     }
 
     contract(abi = [], address = false) {
@@ -459,7 +546,7 @@ export default class TronWeb extends EventEmitter {
         const account = utils.accounts.generateAccount();
 
         if(callback)
-            callback(null, account);
+            return callback(null, account);
 
         return account;
     }
@@ -468,7 +555,7 @@ export default class TronWeb extends EventEmitter {
         if(!callback)
             return this.injectPromise(this.isConnected);
 
-        callback(null, {
+        return callback(null, {
             fullNode: await this.fullNode.isConnected(),
             solidityNode: await this.solidityNode.isConnected(),
             eventServer: this.eventServer && await this.eventServer.isConnected()
