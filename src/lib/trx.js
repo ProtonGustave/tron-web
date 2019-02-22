@@ -155,6 +155,22 @@ export default class Trx {
         }).catch(err => callback(err));
     }
 
+    getLatestSoldifiedBlock(callback = false) {        
+        if(!callback)
+            return this.injectPromise(this.getLatestSoldifiedBlock);
+
+        return this.tronWeb.solidityNode.request('walletsolidity/getnowblock')
+        .then((block) => {            
+            if(typeof block !== 'object')
+                throw new Error('block is not an object');
+
+            return callback(null, block);  
+        })
+        .catch((err) => {
+            return callback(err);
+        });
+    }
+    
     getTransactionInfo(transactionID, callback = false) {
         if(!callback)
             return this.injectPromise(this.getTransactionInfo, transactionID);
