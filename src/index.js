@@ -298,6 +298,9 @@ export default class TronWeb extends EventEmitter {
         }).catch(err => callback((err.response && err.response.data) || err));
     }
 
+    // DON'T USE this because of eventquery bug
+    // it's don't show events(at all) that originates not in
+    // reciever address of transaction
     // works only with this event server
     // https://github.com/tronprotocol/tron-eventquery
     getEventsByTimestamp({
@@ -364,25 +367,6 @@ export default class TronWeb extends EventEmitter {
             return callback(null, data);
         })
         .catch(err => callback((err.response && err.response.data) || err));
-    }
-
-    getLatestSoldifiedBlock(callback = false) {        
-        if(!callback)
-            return this.injectPromise(this.getLatestSoldifiedBlock);
-
-        if(!this.eventServer)
-            return callback('No event server configured');
-
-        return this.eventServer.request('blocks/latestSolidifiedBlockNumber')
-        .then((blockNum) => {            
-            if(Number.isInteger(blockNum) === false)
-                throw new Error('Response is not an integer');
-
-            return callback(null, blockNum);  
-        })
-        .catch((err) => {
-            return callback(err);
-        });
     }
 
     contract(abi = [], address = false) {

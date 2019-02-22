@@ -88,7 +88,7 @@ export default class Trx {
         }).catch(err => callback(err));
     }
 
-    /*getSoldifiedBlockByNumber(blockID, callback = false) {
+    /*getSoldifiedBlockByNumber(blockID = null, callback = false) {
         if(!callback)
             return this.injectPromise(this.getBlockByNumber, blockID);
 
@@ -104,6 +104,22 @@ export default class Trx {
             callback(null, block);
         }).catch(err => callback(err));
     }*/
+
+    getLatestSoldifiedBlock(callback = false) {        
+        if(!callback)
+            return this.injectPromise(this.getLatestSoldifiedBlock);
+
+        return this.tronWeb.solidityNode.request('walletsolidity/getnowblock')
+        .then((block) => {            
+            if(typeof block !== 'object')
+                throw new Error('block is not an object');
+
+            return callback(null, block);  
+        })
+        .catch((err) => {
+            return callback(err);
+        });
+    }
 
     getBlockTransactionCount(block = this.tronWeb.defaultBlock, callback = false) {
         if(utils.isFunction(block)) {
